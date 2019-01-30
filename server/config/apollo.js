@@ -19,8 +19,16 @@ module.exports = ({ app, pgResource }) => {
    */
 
   // @TODO: Refactor to use 'makeExecutableSchema' to wire up your schema to your resolvers:
-  const schema = undefined;
+  const schema = makeExecutableSchema ({
+    typeDefs,
+    resolvers,
+  });
   // -------------------------------
+  const playground = {
+    settings: {
+      'editor.cursorShape': 'line',
+    },
+  };
 
   const apolloServer = new ApolloServer({
     context: ({ req }) => {
@@ -43,9 +51,11 @@ module.exports = ({ app, pgResource }) => {
          * Refactor this code and supply any additional information (values, methods, objects...etc)
          * you'll need to use in your resolving functions.
          */
+         pgResource,
       };
     },
-    schema
+    schema,
+    playground
   });
 
   apolloServer.applyMiddleware({
