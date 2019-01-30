@@ -211,13 +211,14 @@ module.exports = (postgres) => {
         // Insert tags
         // @TODO
         // -------------------------------
-        tags = tags.map(tag => client.query({
-          text: 'INSERT INTO items_tags (itemid, tagid) VALUES ($1, $2)',
-          values: [newItemID, tag]
-        }));
-        
-        await Promise.all(tags);
-        
+        if (tags.length) {
+          tags = tags.map(tag => client.query({
+            text: 'INSERT INTO items_tags (itemid, tagid) VALUES ($1, $2)',
+            values: [newItemID, tag]
+          }));
+          
+          await Promise.all(tags);
+        }
         // Commit the entire transaction!
         await client.query('COMMIT')
 
