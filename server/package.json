@@ -21,7 +21,9 @@
     "apollo-server": "^2.0.0-rc.0",
     "apollo-server-express": "^2.0.0-rc.0",
     "apollo-upload-server": "^5.0.0",
+    "bcrypt": "^3.0.4",
     "bcryptjs": "^2.4.3",
+    "bluebird": "^3.5.3",
     "chalk": "2.4.1",
     "cookie-parser": "^1.4.3",
     "cors": "^2.8.4",
@@ -30,6 +32,7 @@
     "graphql": "^0.13.2",
     "graphql-playground-middleware-express": "^1.7.0",
     "jsonwebtoken": "^8.3.0",
+    "node-pre-gyp": "^0.12.0",
     "pg": "^7.4.3",
     "stringstream": "0.0.6"
   },

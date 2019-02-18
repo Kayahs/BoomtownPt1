@@ -13,22 +13,23 @@
  *  The user resolver has been completed as an example of what you'll need to do.
  *  Finish of the rest of the resolvers when you're ready.
  */
-const { ApolloError } = require('apollo-server-express');
+const { ApolloError } = require('apollo-server-express')
 
 // @TODO: Uncomment these lines later when we add auth
-// const jwt = require("jsonwebtoken")
-// const authMutations = require("./auth")
+const jwt = require('jsonwebtoken')
+const authMutations = require('./auth')
 // -------------------------------
-const { UploadScalar, DateScalar } = require('../custom-types');
+const { UploadScalar, DateScalar } = require('../custom-types')
+const authenticate = require('../authenticate')
 
-module.exports = (app) => {
+module.exports = app => {
   return {
     // Upload: UploadScalar,
     // Date: DateScalar,
 
     Query: {
       // LATER
-      viewer() {
+      async viewer(parent, args, { req, pgResource }) {
         /**
          * @TODO: Authentication - Server
          *
@@ -43,35 +44,40 @@ module.exports = (app) => {
          *  the token's stored user here. If there is no token, the user has signed out,
          *  in which case you'll return null
          */
-        return null;
+        const userID = authenticate(app, req)
+        const user = await pgResource.getUserById(userID)
+
+        return user
       },
       // NOW
-      async user(parent, { id }, { pgResource }, info) {
+      async user(parent, { id }, { req, pgResource }, info) {
+        authenticate(app, req)
         try {
-          const user = await pgResource.getUserById(id);
-          return user;
+          const user = await pgResource.getUserById(id)
+          return user
         } catch (e) {
-          throw new ApolloError(e);
+          throw new ApolloError(e)
         }
       },
       // NOW List of all items in the database
-      async items(parent, { idToOmit }, { pgResource }) {
-        // @TODO: Replace this mock return statement with the correct items from Postgres
+      async items(parent, { idToOmit }, { req, pgResource }) {
+        authenticate(app, req)
         try {
-          const items = await pgResource.getItems(idToOmit);
-          return items;
+          const items = await pgResource.getItems(idToOmit)
+          return items
         } catch (e) {
-          throw new ApolloError(e);
+          throw new ApolloError(e)
         }
         // -------------------------------
       },
       // NOW List of all the tags
-      async tags(parent, {}, { pgResource }, info) {
+      async tags(parent, {}, { req, pgResource }, info) {
+        authenticate(app, req)
         try {
-          const tags = await pgResource.getTags();
-          return tags;
+          const tags = await pgResource.getTags()
+          return tags
         } catch (e) {
-          throw new ApolloError(e);
+          throw new ApolloError(e)
         }
       }
     },
@@ -89,24 +95,26 @@ module.exports = (app) => {
        */
       // @TODO: Uncomment these lines after you define the User type with these fields
       // NOW
-      async items(user, {}, { pgResource }, info) {
+      async items(user, {}, { req, pgResource }, info) {
         // @TODO: Replace this mock return statement with the correct items from Postgres
+        authenticate(app, req)
         try {
-          const items = await pgResource.getItemsForUser(user.id);
-          return items;
+          const items = await pgResource.getItemsForUser(user.id)
+          return items
         } catch (e) {
-          throw new ApolloError(e);
+          throw new ApolloError(e)
         }
         // -------------------------------
       },
       // NOW
-      async borrowed(user, {}, { pgResource }, info) {
+      async borrowed(user, {}, { req, pgResource }, info) {
         // @TODO: Replace this mock return statement with the correct items from Postgres
+        authenticate(app, req)
         try {
-          const items = await pgResource.getBorrowedItemsForUser(user.id);
-          return items;
+          const items = await pgResource.getBorrowedItemsForUser(user.id)
+          return items
         } catch (e) {
-          throw new ApolloError(e);
+          throw new ApolloError(e)
         }
         // -------------------------------
       }
@@ -126,45 +134,45 @@ module.exports = (app) => {
        */
       // @TODO: Uncomment these lines after you define the Item type with these fields
       // NOW
-      async owner(item, {}, { pgResource }, info) {
+      async owner(item, {}, { req, pgResource }, info) {
         // @TODO: Replace this mock return statement with the correct user from Postgres
         try {
-          const owner = pgResource.getUserById(item.ownerid);
-          return owner;
+          const owner = pgResource.getUserById(item.ownerid)
+          return owner
         } catch (e) {
-          throw new ApolloError(e);
+          throw new ApolloError(e)
         }
-      //   // -------------------------------
+        //   // -------------------------------
       },
       // NOW
-      async tags(item, {}, { pgResource }, info) {
+      async tags(item, {}, { req, pgResource }, info) {
         // @TODO: Replace this mock return statement with the correct tags for the queried Item from Postgres
         try {
-          const tags = pgResource.getTagsForItem(item.id);
-          return tags;
+          const tags = pgResource.getTagsForItem(item.id)
+          return tags
         } catch (e) {
-          throw new ApolloError(e);
+          throw new ApolloError(e)
         }
         // -------------------------------
       },
       // NOW
-      async borrower(item, {}, { pgResource }, info) {
+      async borrower(item, {}, { req, pgResource }, info) {
         /**
          * @TODO: Replace this mock return statement with the correct user from Postgres
          * or null in the case where the item has not been borrowed.
          */
-         const borrower = pgResource.getUserById(item.borrowerid);
-        return borrower;
+        const borrower = pgResource.getUserById(item.borrowerid)
+        return borrower
         // -------------------------------
       }
     },
 
     Mutation: {
       // @TODO: Uncomment this later when we add auth
-      // ...authMutations(app),
+      ...authMutations(app),
       // -------------------------------
 
-      async addItem(parent, args, context, info) {
+      async addItem(parent, args, { req, pgResource }, info) {
         /**
          *  @TODO: Destructuring
          *
@@ -180,11 +188,32 @@ module.exports = (app) => {
 
         //image = await image;
         //const user = await jwt.decode(context.token, app.get('JWT_SECRET'));
-        const newItem = await context.pgResource.saveNewItem(
-          args.input
-        );
-        return newItem;
+        args.input.ownerid = authenticate(app, req)
+        const newItem = await pgResource.saveNewItem(args.input)
+        return newItem
+      },
+
+      async borrowItem(parent, args, { req, pgResource }, info) {
+        const borrowerid = authenticate(app, req)
+        const originalItem = await pgResource.getItemById(args.input);
+        if (originalItem.ownerid === borrowerid) {
+          throw new Error('You can\'t borrow your own item.')
+        }
+        const item = await pgResource.borrowItem({
+          borrowerid,
+          itemID: args.input
+        });
+        return item
+      },
+
+      async returnItem(parent, args, { req, pgResource }, info) {
+        authenticate(app, req)
+        const item = await pgResource.returnItem({
+          itemID: args.input
+        });
+        return item
       }
+
     }
-  };
-};
+  }
+}

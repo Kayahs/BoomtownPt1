@@ -52,7 +52,8 @@ module.exports = (app) => {
    *  For example: app.set('PG_HOST', process.env.PG_HOST || 'localhost')
    */
 
-
+  app.set('JWT_COOKIE_NAME', 'token');
+  
   app.use(cookieParser());
 
   if (process.env.NODE_ENV === 'production') {
@@ -63,7 +64,7 @@ module.exports = (app) => {
     app.use(fallback('index.html', { root }));
   }
 
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV !== 'production') {
     // Allow requests from dev server address
     const corsConfig = {
       origin: 'http://localhost:3000',

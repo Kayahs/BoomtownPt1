@@ -1,4 +1,4 @@
-const { gql } = require('apollo-server-express');
+const { gql } = require('apollo-server-express')
 
 /**
  *  @TODO: Boomtown Schema
@@ -29,6 +29,7 @@ module.exports = gql`
     id: ID!
     username: String!
     email: String!
+    password: String!
     bio: String
     items: [Item]
     borrowed: [Item]
@@ -36,16 +37,27 @@ module.exports = gql`
 
   type Tag {
     id: ID!
-    tagname: String! 
+    tagname: String!
   }
 
   input NewItemInput {
     title: String!
     imageURL: String
     description: String!
-    ownerid: ID!
     borrowerid: ID
     tags: [ID!]
+  }
+
+  input NewUserInput {
+    username: String!
+    email: String!
+    bio: String
+    password: String!
+  }
+
+  input LoginInput {
+    email: String!
+    password: String!
   }
 
   type Query {
@@ -55,8 +67,16 @@ module.exports = gql`
     tags: [Tag!]!
   }
 
+  type LoginResponse {
+    csrfToken: String!
+    user: User!
+  }
+
   type Mutation {
     addItem(input: NewItemInput!): Item!
+    signup(input: NewUserInput!): LoginResponse!
+    login(input: LoginInput!): LoginResponse!
+    borrowItem(input: ID!): Item!
+    returnItem(input: ID!): Item!
   }
-`;
-  
+`
